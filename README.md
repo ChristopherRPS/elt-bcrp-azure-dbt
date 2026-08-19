@@ -9,22 +9,22 @@ Pipeline ELT que extrae series estadísticas públicas del **Banco Central de Re
 
 ```mermaid
 flowchart LR
-    A[BCRP API\nestadisticas.bcrp.gob.pe] -->|Python: extract + flatten| B[(bronze local\n*.jsonl)]
-    B -->|dbt: silver, target=dev| C[(int_bcrp_series_cleaned\nparseado, tipado, deduplicado)]
-    C -->|dbt: gold, target=dev| D[(dim_serie + dim_fecha +\nfct_indicadores_economicos)]
+    A[BCRP API] -->|extract y flatten| B[(bronze local - jsonl)]
+    B -->|dbt silver, target dev| C[(silver - series limpias)]
+    C -->|dbt gold, target dev| D[(gold - fct + dims)]
 
-    subgraph "Fase 1 · Local (hoy)"
-    B
-    C
-    D
-    W[(DuckDB\nbcrp.duckdb)]
-    D -.materializado en.-> W
+    subgraph FASE1[Fase 1 - Local hoy]
+        B
+        C
+        D
+        W[(DuckDB)]
+        D -.materializado en.-> W
     end
 
-    subgraph "Fase 2 · Azure (ya desplegado)"
-    ADLS[(ADLS Gen2\nbronze - landing zone)]
-    PGB[(Postgres\nschema bronze)]
-    PGG[(Postgres\nschema gold_*)]
+    subgraph FASE2[Fase 2 - Azure ya desplegado]
+        ADLS[(ADLS Gen2 - bronze landing zone)]
+        PGB[(Postgres - schema bronze)]
+        PGG[(Postgres - schema gold)]
     end
 
     B -.extract_bcrp.py sube copia.-> ADLS
