@@ -2,6 +2,7 @@
 
 Pipeline ELT que extrae series estadísticas públicas del **Banco Central de Reserva del Perú (BCRP)** — tipo de cambio, reservas internacionales, inflación —, las aterriza en una capa bronze, las transforma con dbt siguiendo una arquitectura bronze/silver/gold, y provisiona la infraestructura de nube como código.
 
+Este proyecto está diseñado para demostrar competencias de **Data Engineer**, no de analista: la infraestructura, la orquestación y la calidad del pipeline son el foco, no el análisis final.
 
 **Estado actual: el pipeline corre de punta a punta tanto en local (DuckDB) como en Azure real (ADLS Gen2 + Azure Database for PostgreSQL, desplegado con Terraform), con 9/9 tests de calidad en verde en ambos.**
 
@@ -27,12 +28,12 @@ flowchart LR
         PGG[(Postgres - schema gold)]
     end
 
-    B -.extract_bcrp.py sube copia.-> ADLS
-    B -.load_bronze_postgres.py.-> PGB
-    PGB -.dbt: silver+gold, target=azure\nmismo SQL que en local.-> PGG
+    B -.copia sube.-> ADLS
+    B -.carga a Postgres.-> PGB
+    PGB -.dbt silver y gold, target azure.-> PGG
 ```
 
-**Capas del lago ( patrón bronze/silver/gold ):**
+**Capas del lago (mismo patrón bronze/silver/gold que en tus otros proyectos):**
 
 | Capa | Contenido | Formato hoy (local) | Formato hoy (Azure) |
 |---|---|---|---|
@@ -56,7 +57,7 @@ Series usadas en este proyecto (códigos y formato de respuesta verificados cont
 
 Puedes buscar más series en el [buscador de series del BCRP](https://estadisticas.bcrp.gob.pe/estadisticas/series/).
 
-**Nota sobre el formato de periodo:** el BCRP devuelve el periodo como texto en español, ej. `"Ene.2023"`, no como fecha ISO — el modelo silver (`int_bcrp_series_cleaned.sql`) se encarga de parsearlo.
+**Nota sobre el formato de periodo:** el BCRP devuelve el periodo como texto en español, ej. `"Ene.2023"`, no como fecha ISO — el modelo silver (`int_bcrp_series_cleaned.sql`) se encarga de parsearlo. Esto es justo el tipo de detalle de "datos reales del mundo real" que vale la pena mencionar en una entrevista técnica.
 
 ## 3. Stack
 
@@ -86,7 +87,7 @@ dbt test
 
 Ya hay un archivo de ejemplo versionado en `data/bronze/` con datos reales (2023–2026) por si quieres correr `dbt run`/`dbt test` sin siquiera llamar al API primero.
 
-**Orquestado con Airflow (opcional):**
+**Orquestado con Airflow (opcional, mismo patrón que tus otros proyectos):**
 
 ```bash
 docker compose up
@@ -125,6 +126,7 @@ docker compose up
    dbt test --target azure
    ```
 7. La tarea `subir_bronze_a_adls` del DAG de Airflow (`dags/bcrp_elt_pipeline.py`) ya llama a esta misma función (`upload_to_adls`) — si corres el pipeline vía `docker compose up` con las variables `AZURE_STORAGE_ACCOUNT_NAME`/`AZURE_STORAGE_ACCOUNT_KEY` seteadas en el contenedor de Airflow, la subida a ADLS queda automatizada de punta a punta. Pendiente: migrar la orquestación a un pipeline nativo de Azure Data Factory como alternativa a Airflow.
+8. **Importante — controla el gasto:** revisa `$200 USD en créditos: expira en 30 días` en la barra del portal. Corre `terraform destroy` en Cloud Shell cuando termines de tomar tus capturas de pantalla para el README y el portafolio, para no generar costo recurrente. También puedes activar una [alerta de presupuesto](https://portal.azure.com/#view/Microsoft_Azure_CostManagement/Menu/~/budgets) de $5-10 como red de seguridad.
 
 ## 6. Capturas — pipeline corriendo en Azure real
 
