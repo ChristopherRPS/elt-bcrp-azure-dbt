@@ -2,7 +2,6 @@
 
 Pipeline ELT que extrae series estadísticas públicas del **Banco Central de Reserva del Perú (BCRP)** — tipo de cambio, reservas internacionales, inflación —, las aterriza en una capa bronze, las transforma con dbt siguiendo una arquitectura bronze/silver/gold, y provisiona la infraestructura de nube como código.
 
-Este proyecto está diseñado para demostrar competencias de **Data Engineer**, no de analista: la infraestructura, la orquestación y la calidad del pipeline son el foco, no el análisis final.
 
 **Estado actual: el pipeline corre de punta a punta tanto en local (DuckDB) como en Azure real (ADLS Gen2 + Azure Database for PostgreSQL, desplegado con Terraform), con 9/9 tests de calidad en verde en ambos.**
 
@@ -33,7 +32,7 @@ flowchart LR
     PGB -.dbt silver y gold, target azure.-> PGG
 ```
 
-**Capas del lago (mismo patrón bronze/silver/gold que en tus otros proyectos):**
+**Capas del lago (bronze/silver/gold):**
 
 | Capa | Contenido | Formato hoy (local) | Formato hoy (Azure) |
 |---|---|---|---|
@@ -41,7 +40,6 @@ flowchart LR
 | `silver` | Fecha parseada a `DATE`, valor tipado a `DOUBLE`, deduplicado por extracción más reciente | vista dbt sobre DuckDB | vista dbt sobre Postgres (esquema `gold_silver`) |
 | `gold` | Modelo dimensional: `fct_indicadores_economicos` + `dim_fecha` + `dim_serie` | tabla dbt sobre DuckDB | tabla dbt sobre Postgres (esquema `gold_gold`) |
 
-**Nota:** ADLS Gen2 funciona como landing zone del dato crudo (auditoría/reproceso histórico), no como fuente de lectura para dbt — el warehouse consultable (bronze → silver → gold) vive en Postgres en la Fase 2. Es el mismo patrón que usan muchos pipelines reales: el data lake guarda el crudo tal cual llegó, y el warehouse relacional es lo que consultan BI/analistas.
 
 ## 2. Fuente de datos (verificada contra el API real)
 
@@ -57,7 +55,7 @@ Series usadas en este proyecto (códigos y formato de respuesta verificados cont
 
 Puedes buscar más series en el [buscador de series del BCRP](https://estadisticas.bcrp.gob.pe/estadisticas/series/).
 
-**Nota sobre el formato de periodo:** el BCRP devuelve el periodo como texto en español, ej. `"Ene.2023"`, no como fecha ISO — el modelo silver (`int_bcrp_series_cleaned.sql`) se encarga de parsearlo. Esto es justo el tipo de detalle de "datos reales del mundo real" que vale la pena mencionar en una entrevista técnica.
+**Nota sobre el formato de periodo:** el BCRP devuelve el periodo como texto en español, ej. `"Ene.2023"`, no como fecha ISO — el modelo silver (`int_bcrp_series_cleaned.sql`) se encarga de parsearlo.
 
 ## 3. Stack
 
@@ -87,7 +85,7 @@ dbt test
 
 Ya hay un archivo de ejemplo versionado en `data/bronze/` con datos reales (2023–2026) por si quieres correr `dbt run`/`dbt test` sin siquiera llamar al API primero.
 
-**Orquestado con Airflow (opcional, mismo patrón que tus otros proyectos):**
+**Orquestado con Airflow (opcional):**
 
 ```bash
 docker compose up
