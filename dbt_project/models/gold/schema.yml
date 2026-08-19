@@ -1,0 +1,41 @@
+# Tests de calidad de datos sobre la capa gold. Correr con `dbt test`.
+# Esto es justo lo que Belcorp pide como "calidad de datos" en sus vacantes:
+# tests declarativos y automatizados, no verificacion manual.
+
+version: 2
+
+models:
+  - name: dim_serie
+    description: "Catalogo de series economicas del BCRP incluidas en el pipeline"
+    columns:
+      - name: series_code
+        data_tests:
+          - not_null
+          - unique
+
+  - name: dim_fecha
+    description: "Dimension de periodos (mes) observados en los datos"
+    columns:
+      - name: period_date
+        data_tests:
+          - not_null
+          - unique
+
+  - name: fct_indicadores_economicos
+    description: "Tabla de hechos: valor de cada indicador economico por periodo"
+    columns:
+      - name: series_code
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_serie')
+              field: series_code
+      - name: period_date
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('dim_fecha')
+              field: period_date
+      - name: value
+        data_tests:
+          - not_null

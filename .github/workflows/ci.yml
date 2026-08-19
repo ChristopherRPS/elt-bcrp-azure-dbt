@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  lint-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt ruff
+      - name: Lint con ruff
+        run: ruff check ingestion/ dags/
+
+  dbt-test-local:
+    # Corre el pipeline completo contra DuckDB (target=dev) usando los datos
+    # de ejemplo versionados en data/bronze/ -- no requiere ninguna credencial
+    # de Azure. Este es el job que valida cada PR: si un modelo o un test se
+    # rompe, se detecta aqui antes de tocar la infraestructura real.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Instalar dbt-core + dbt-duckdb
+        run: pip install dbt-core==1.8.6 dbt-duckdb==1.8.1
+      - name: dbt run
+        working-directory: dbt_project
+        env:
+          DBT_PROFILES_DIR: .
+        run: dbt run
+      - name: dbt test
+        working-directory: dbt_project
+        env:
+          DBT_PROFILES_DIR: .
+        run: dbt test
+
+  terraform-plan:
+    runs-on: ubuntu-latest
+    # TODO: requiere credenciales de Azure (AZURE_CLIENT_ID, etc.) como
+    # GitHub Secrets antes de habilitar este job -- se activa en la Fase 2
+    # (despliegue real a Azure), no es necesario para validar el pipeline local.
+    if: false
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform init
+      - run: terraform plan

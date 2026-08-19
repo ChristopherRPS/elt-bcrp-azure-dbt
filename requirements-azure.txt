@@ -1,0 +1,13 @@
+# Dependencias adicionales para la Fase 2 (despliegue real a Azure).
+# apache-airflow NO va aqui a proposito: se corre via la imagen oficial de
+# Docker (ver docker-compose.yml), no via pip install local.
+#
+# Se usa dbt-postgres (Azure Database for PostgreSQL Flexible Server) en vez
+# de dbt-sqlserver/Azure SQL: dbt-postgres es el adaptador mas maduro y
+# estable del ecosistema dbt, psycopg2 no requiere driver ODBC ni compilador
+# en Windows, y es el mismo motor que ya se usa en el resto del portafolio.
+-r requirements.txt
+dbt-core==1.8.6
+dbt-postgres==1.8.2
+psycopg2-binary==2.9.9
+azure-storage-file-datalake==12.16.0

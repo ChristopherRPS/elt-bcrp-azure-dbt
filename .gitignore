@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# dbt
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+
+# DuckDB warehouse (generado localmente con `dbt run`, no se versiona;
+# data/bronze/*.jsonl SI se versiona como dato de ejemplo real)
+data/warehouse/*.duckdb
+data/warehouse/*.duckdb.wal
+
+# Terraform
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.backup
+infra/.terraform.lock.hcl
+infra/*.tfvars
+
+# Secrets / env
+.env
+*.pem
+
+# OS
+.DS_Store
+
+# dbt user config (id anonimo de telemetria, no debe versionarse)
+dbt_project/.user.yml

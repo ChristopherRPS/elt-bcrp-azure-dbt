@@ -1,0 +1,30 @@
+# Definicion de la fuente "cruda" para la FASE 2 (target=azure/PostgreSQL).
+#
+# En desarrollo local (target=dev, DuckDB) esta fuente NO se usa: el modelo
+# bronze/stg_bcrp_raw.sql lee directo los .jsonl locales con read_json_auto().
+#
+# En target=azure, bronze/stg_bcrp_raw.sql hace
+# `select * from {{ source('bronze_bcrp', 'raw_series_bcrp') }}`, que apunta
+# a esta tabla real en el esquema "bronze" de PostgreSQL, cargada por
+# ingestion/load_bronze_postgres.py.
+
+version: 2
+
+sources:
+  - name: bronze_bcrp
+    description: "Datos crudos (planos) del API del BCRP, cargados en PostgreSQL sin transformar"
+    schema: bronze
+    tables:
+      - name: raw_series_bcrp
+        description: "Una fila por (serie, periodo) tal como lo entrega ingestion/extract_bcrp.py"
+        columns:
+          - name: series_code
+            description: "Codigo de serie BCRP, ej. PN01246PM"
+          - name: series_name
+            description: "Nombre oficial de la serie, tal como lo reporta el API del BCRP"
+          - name: period_name
+            description: "Periodo del dato tal como lo entrega el BCRP, ej. 'Ene.2023'"
+          - name: value_raw
+            description: "Valor tal cual devuelto por el API (string, sin castear)"
+          - name: extracted_at
+            description: "Timestamp UTC (ISO 8601) de la extraccion"

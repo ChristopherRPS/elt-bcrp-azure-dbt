@@ -1,0 +1,34 @@
+# Perfil de conexion de dbt para este proyecto.
+#
+# Por defecto (target: dev) corre 100% local sobre DuckDB -- sin cuenta de
+# Azure, sin costo, sin credenciales. Es el target pensado para desarrollar
+# y probar los modelos antes de tocar la nube.
+#
+# El target "azure" (FASE 2) apunta a Azure Database for PostgreSQL Flexible
+# Server usando dbt-postgres. Requiere las variables de entorno en .env (ver
+# .env.example) y que la infraestructura de infra/ ya este desplegada.
+#
+# Uso:
+#   cd dbt_project
+#   DBT_PROFILES_DIR=. dbt run              # usa el target dev (duckdb) por defecto
+#   DBT_PROFILES_DIR=. dbt run --target azure   # cuando la infra de Azure ya exista
+
+bcrp_elt:
+  target: dev
+  outputs:
+
+    dev:
+      type: duckdb
+      path: '../data/warehouse/bcrp.duckdb'
+      threads: 4
+
+    azure:
+      type: postgres
+      host: "{{ env_var('DBT_PG_HOST') }}"
+      port: 5432
+      user: "{{ env_var('DBT_PG_USER') }}"
+      password: "{{ env_var('DBT_PG_PASSWORD') }}"
+      dbname: "{{ env_var('DBT_PG_DATABASE') }}"
+      schema: gold
+      sslmode: require # Azure Flexible Server exige SSL
+      threads: 4

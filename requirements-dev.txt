@@ -1,0 +1,5 @@
+# Dependencias para correr el pipeline completo en local (Fase 1: DuckDB).
+# Instalar en un entorno virtual: python3 -m venv .venv && source .venv/bin/activate
+-r requirements.txt
+dbt-core==1.8.6
+dbt-duckdb==1.8.1
